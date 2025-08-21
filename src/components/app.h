@@ -8,7 +8,7 @@
 #elif defined(ESP8266)
     #include <FS.h>
 #else
-  #error "This code is for ESP32 or ESP8266 only."
+  #error "This code is for ESP32 and ESP8266 only."
 #endif
 #include <EEPROM.h>
 
@@ -18,6 +18,7 @@
 #include "components/data.h"
 #include "components/eeprom_manager.h"
 #include "components/millis_timer.h"
+#include "components/serializers.h"
 #include "components/trigger_sensors_manager.h"
 #include "components/utils.h"
 #include "components/validation.h"
@@ -38,37 +39,49 @@ struct AppLogConfig {
 };
 
 
-bool isAnyEnabledTriggers(LightsData &data)
-    {
-        return data.triggerOnDrivewayGates || data.triggerOnYardGate || data.triggerOnFrontDoor;
-    }
+void sendAPIRequestResult(AsyncWebServerRequest *request, bool isOk) {
+    char jsonBuffer[50];
+    sprintf(
+        jsonBuffer,
+        apiResultJsonTemplate,
+        toJsonBool(isOk)
+    );
+
+    request->send(200, "application/json", jsonBuffer);
+}
 
 
-bool serializeLightsData(AsyncWebServerRequest *request, LightsData &data)
-    {
-        bool triggerOnDrivewayGates, triggerOnYardGate, triggerOnFrontDoor;
-        uint16_t offDelay;
+class AppAutoTimer {
+    private:
+        bool isTimerActive = false;
+        MillisTimer periodTimer = MillisTimer(60000);
 
-        const bool isValid = (
-            validateQuery(request, "triggerOnDrivewayGates", triggerOnDrivewayGates) &&
-            validateQuery(request, "triggerOnYardGate", triggerOnYardGate) &&
-            validateQuery(request, "triggerOnFrontDoor", triggerOnFrontDoor) &&
-            validateQuery(request, "offDelay", offDelay) &&
-            offDelay >= 1 && offDelay <= 1200  // Значения задержки храним и валиируем в секундах, а отображаем в минутах
-        );
-
-        if (!isValid)
+    public:
+        void set(uint32_t period)
             {
-                return false;
+                isTimerActive = true;
+                periodTimer.setInterval(secondsToMillis(period));
+                periodTimer.refresh();
             }
 
-        data.triggerOnDrivewayGates = triggerOnDrivewayGates;
-        data.triggerOnYardGate = triggerOnYardGate;
-        data.triggerOnFrontDoor = triggerOnFrontDoor;
-        data.offDelay = offDelay;
+        void acknowledge()
+            {
+                isTimerActive = false;
+                periodTimer.flush();
+            }
 
-        return true;
-    }
+        bool isExpired() {
+            return isTimerActive && periodTimer.isReady();
+        }
+
+        bool isActive() {
+            return isTimerActive;
+        }
+
+        uint32_t remains() {
+            return millisToSeconds(periodTimer.remains());
+        }
+};
 
 
 class App {
@@ -83,13 +96,15 @@ class App {
         AppConfig *config = nullptr;
         AppLogConfig *logConfig = nullptr;
 
-        MillisTimer readSensorsTimer = MillisTimer(500);  // Время опрса дверей
+        MillisTimer readSensorsTimer = MillisTimer(500);  // Время опроса дверей
         MillisTimer offDelayTimer = MillisTimer(10000);  // Сколько горит свет
         bool isLightsActive = false;  // Вкл или выкл реле
 
+        AppAutoTimer autoDisableTimer = AppAutoTimer();
+
     void main()
         {
-            if (readSensorsTimer.isReady())
+            if (lightsData.isZoneControlEnabled && readSensorsTimer.isReady())
                 {
                     const bool isAnyActiveSensor = triggerSensorsManager->isAnyActiveFromMask(
                         lightsData,
@@ -125,6 +140,12 @@ class App {
                                     << std::endl;
                         }
                 }
+
+            if (autoDisableTimer.isExpired()) {
+                lightsData.isZoneControlEnabled = true;
+                eepromManager->save(lightsData);
+                autoDisableTimer.acknowledge();
+            }
         }
 
 	void setupWebServer()
@@ -155,18 +176,44 @@ class App {
             );
 
             webServer->on(
-                "/api/getLightStatus/",  // Горит не горит лампочка
+                "/api/getState/",  // Горит не горит лампочка
                 HTTP_GET,
                 [this](AsyncWebServerRequest *request) {
-                    char jsonBuffer[100];
+                    char jsonBuffer[300];
                     sprintf(
                         jsonBuffer,
-                        apiGetLightStatusJsonTemplate,
+                        apiGetStateJsonTemplate,
                         toJsonBool(this->isLightsActive),
-                        this->offDelayTimer.remains()
+                        millisToSeconds(this->offDelayTimer.remains()),
+                        toJsonBool(this->lightsData.isZoneControlEnabled),
+                        toJsonBool(this->autoDisableTimer.isActive()),
+                        this->autoDisableTimer.remains()
                     );
 
                     request->send(200, "application/json", jsonBuffer);
+                }
+            );
+
+            webServer->on(
+                "/api/manageZoneControl/",
+                HTTP_POST,
+                [this](AsyncWebServerRequest *request) {
+                    if (this->autoDisableTimer.isActive()) {
+                        sendAPIRequestResult(request, false);
+                        return;
+                    }
+
+                    const bool isOk = (
+                        serializeManageZoneControlRequest(request, this->lightsData) &&
+                        this->eepromManager->save(this->lightsData)
+                    );
+
+                    if (isOk && !this->lightsData.isZoneControlEnabled)
+                        {
+                            this->offDelayTimer.flush();
+                        }
+
+                    sendAPIRequestResult(request, isOk);
                 }
             );
 
@@ -181,7 +228,8 @@ class App {
                         toJsonBool(this->lightsData.triggerOnDrivewayGates),
                         toJsonBool(this->lightsData.triggerOnYardGate),
                         toJsonBool(this->lightsData.triggerOnFrontDoor),
-                        this->lightsData.offDelay
+                        this->lightsData.offDelay,
+                        this->lightsData.autoDisableTimerPeriod
                     );
 
                     request->send(200, "application/json", jsonBuffer);
@@ -192,12 +240,14 @@ class App {
                 "/api/savePreference/",  // Настройки пользователя принимаем сюда после нажатия кнопки save, валидируем и сохраняем в епром
                 HTTP_POST,
                 [this](AsyncWebServerRequest *request) {
-                    const bool isSerialized = serializeLightsData(request, this->lightsData),
-                               isSaved = isSerialized && this->eepromManager->save(this->lightsData);
+                    const bool isOk = (
+                        serializeSavePreferenceRequest(request, this->lightsData) &&
+                        this->eepromManager->save(this->lightsData)
+                    );
 
-                    if (isSaved)
+                    if (isOk)
                         {
-                            this->offDelayTimer.setInterval(this->lightsData.offDelay * 1000);
+                            this->offDelayTimer.setInterval(secondsToMillis(lightsData.offDelay));
                             this->offDelayTimer.refresh();
 
                             if (!isAnyEnabledTriggers(this->lightsData))
@@ -206,14 +256,44 @@ class App {
                                 }
                         }
 
-                    char jsonBuffer[50];
-                    sprintf(
-                        jsonBuffer,
-                        apiSavePreferenceJsonTemplate,
-                        toJsonBool(isSaved)
-                    );
+                    sendAPIRequestResult(request, isOk);
+                }
+            );
 
-                    request->send(200, "application/json", jsonBuffer);
+            webServer->on(
+                "/api/setAutoDisableTimer/",
+                HTTP_POST,
+                [this](AsyncWebServerRequest *request) {
+                    const bool isSerialized = serializeSetAutoDisableTimerRequest(request, this->lightsData);
+
+                    if (!isSerialized) {
+                        sendAPIRequestResult(request, false);
+                        return;
+                    }
+
+                    this->lightsData.isZoneControlEnabled = false;
+                    this->offDelayTimer.flush();
+                    this->autoDisableTimer.set(this->lightsData.autoDisableTimerPeriod);
+                    const bool isOk = this->eepromManager->save(this->lightsData);
+
+                    sendAPIRequestResult(request, isOk);
+                }
+            );
+
+            webServer->on(
+                "/api/cancelAutoDisableTimer/",
+                HTTP_POST,
+                [this](AsyncWebServerRequest *request) {
+                    if (!this->autoDisableTimer.isActive()) {
+                        sendAPIRequestResult(request, false);
+                        return;
+                    }
+
+                    this->lightsData.isZoneControlEnabled = true;
+                    this->autoDisableTimer.acknowledge();
+                    const bool isOk = this->eepromManager->save(this->lightsData);
+
+                    sendAPIRequestResult(request, isOk);
                 }
             );
 
@@ -257,7 +337,7 @@ class App {
                 if (eepromManager->load(lightsData))
                     {
                         std::cout << "Successfully loaded lightsData from EEProm" << std::endl;
-                        offDelayTimer.setInterval(lightsData.offDelay * 1000);
+                        offDelayTimer.setInterval(secondsToMillis(lightsData.offDelay));
                     }
 
 				SPIFFS.begin();

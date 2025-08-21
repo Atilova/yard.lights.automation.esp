@@ -30,6 +30,22 @@ const char* toJsonBool(const bool value)
     }
 
 
+uint32_t millisToSeconds(uint32_t value) {
+    return value / 1000;
+}
+
+
+uint32_t secondsToMillis(uint32_t value) {
+    return value * 1000;
+}
+
+
+bool isAnyEnabledTriggers(LightsData &data)
+    {
+        return data.triggerOnDrivewayGates || data.triggerOnYardGate || data.triggerOnFrontDoor;
+    }
+
+
 void printLightsData(LightsData &data)
     {
         std::cout << "LightsData: "

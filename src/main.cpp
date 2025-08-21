@@ -37,7 +37,7 @@ void wifiCallbackAdapter(bool isConnected)
 void setup()
     {
         Serial.begin(115200);
-        delay(100);
+        delay(200);
 
         std::cout.rdbuf(&uartStreamBuf);
         std::cout << "Loaded, ready!" << std::endl;

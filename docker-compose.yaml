@@ -1,0 +1,16 @@
+services:
+  dev-api:
+    build:
+      context: .
+      dockerfile: docker/api.dockerfile
+    ports:
+      - "8000:8000"
+
+  live-server:
+    build:
+      context: .
+      dockerfile: docker/liveserver.dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/srv:cached

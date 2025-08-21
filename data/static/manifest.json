@@ -1,16 +1,16 @@
 {
-    "name": "Lights Control Panel",
-    "short_name": "Lights Control",
-    "start_url": "/index.html",
-    "display": "standalone",
-    "background_color": "#1b1b1b",
-    "theme_color": "#1b1b1b",
-    "description": "Приложение для управления освещением",
-    "icons": [
-      {
-        "src": "icon-500x500.png",
-        "sizes": "500x500",
-        "type": "image/png"
-      }
-    ]
+  "name": "Lights Control Panel",
+  "short_name": "Lights Control",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#1b1b1b",
+  "theme_color": "#1b1b1b",
+  "description": "Приложение для управления освещением",
+  "icons": [
+    {
+      "src": "icon-500x500.png",
+      "sizes": "500x500",
+      "type": "image/png"
+    }
+  ]
 }

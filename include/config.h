@@ -24,7 +24,7 @@
     TriggerSensorsPinConfig triggerSensorsPinConfig = {
         .DRIVEWAY_GATES = 12,
         .YARD_GATE = 13,
-        .FRONT_DOOR = 14,
+        .FRONT_DOOR = 14
     };
 #endif
 

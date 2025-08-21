@@ -1,0 +1,22 @@
+{
+  "name": "lights-control-ui",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"ok\"",
+    "build": "node build.js",
+    "dev": "node build.js --watch"
+  },
+  "author": "atilova",
+  "license": "ISC",
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.1",
+    "esbuild": "^0.25.9"
+  }
+}

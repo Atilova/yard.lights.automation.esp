@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="uft-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <title>Панель управления светом</title>
 
     <link rel="shortcut icon" href="static/favicon.ico" type="image/x-icon" />
@@ -10,72 +10,134 @@
     <link rel="stylesheet" href="static/app.css" />
 </head>
 <body>
-    <div class="form-section">
-        <div class="section-title status inactive" id="statusSection">
-            Состояние:
-            <svg xmlns="http://www.w3.org/2000/svg" class="status-icon" viewBox="0 0 384 512">
-                <path d="M272 384c9.6-31.9 29.5-59.1 49.2-86.2c0 0 0 0 0 0c5.2-7.1 10.4-14.2 15.4-21.4c19.8-28.5 31.4-63 31.4-100.3C368 78.8 289.2 0 192 0S16 78.8 16 176c0 37.3 11.6 71.9 31.4 100.3c5 7.2 10.2 14.3 15.4 21.4c0 0 0 0 0 0c19.8 27.1 39.7 54.4 49.2 86.2l160 0zM192 512c44.2 0 80-35.8 80-80l0-16-160 0 0 16c0 44.2 35.8 80 80 80zM112 176c0 8.8-7.2 16-16 16s-16-7.2-16-16c0-61.9 50.1-112 112-112c8.8 0 16 7.2 16 16s-7.2 16-16 16c-44.2 0-80 35.8-80 80z"/>
-            </svg>
-            <span class="timer-value" id="offDelayRemained"></span>
-        </div>
+    <main class="app">
+        <div class="app__limit-container">
+            <div class="section-title">Панель управления</div>
+            <div class="section-container">
+                <div class="param-container">
+                    <span class="section-sub-title">Освещение</span>
+                    <div id="lightStatusBulb" class="param-container__setting toolbar__status toolbar__status--inactive">
+                        <span class="info-text info-box" id="lightStatusTimeRemained">200 сек</span>
+                        <div class="param-container__delimiter"></div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="toolbar__status-icon" viewBox="0 0 384 512">
+                            <path d="M272 384c9.6-31.9 29.5-59.1 49.2-86.2c0 0 0 0 0 0c5.2-7.1 10.4-14.2 15.4-21.4c19.8-28.5 31.4-63 31.4-100.3C368 78.8 289.2 0 192 0S16 78.8 16 176c0 37.3 11.6 71.9 31.4 100.3c5 7.2 10.2 14.3 15.4 21.4c0 0 0 0 0 0c19.8 27.1 39.7 54.4 49.2 86.2l160 0zM192 512c44.2 0 80-35.8 80-80l0-16-160 0 0 16c0 44.2 35.8 80 80 80zM112 176c0 8.8-7.2 16-16 16s-16-7.2-16-16c0-61.9 50.1-112 112-112c8.8 0 16 7.2 16 16s-7.2 16-16 16c-44.2 0-80 35.8-80 80z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="param-container">
+                    <span class="section-sub-title">Состояние системы</span>
+                    <div class="param-container__setting">
+                        <button id="reloadPreferenceButton" class="click-button">Обновить</button>
+                    </div>
+                </div>
+                <div class="param-container">
+                    <span class="section-sub-title">
+                        Контроль зон <span class="info-text">(вкл/выкл)</span>
+                    </span>
+                    <div class="param-container__setting">
+                        <label class="switch">
+                            <input id="zoneControlSwitch" type="checkbox" />
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
 
-        <div class="section-title">
-            Настройки:
-            <button onclick="appModule.reloadPreference()" class="reload-button">
-                <svg xmlns="http://www.w3.org/2000/svg" class="reload-button-icon" viewBox="0 0 512 512">
-                    <path d="M0 224c0 17.7 14.3 32 32 32s32-14.3 32-32c0-53 43-96 96-96l160 0 0 32c0 12.9 7.8 24.6 19.8 29.6s25.7 2.2 34.9-6.9l64-64c12.5-12.5 12.5-32.8 0-45.3l-64-64c-9.2-9.2-22.9-11.9-34.9-6.9S320 19.1 320 32l0 32L160 64C71.6 64 0 135.6 0 224zm512 64c0-17.7-14.3-32-32-32s-32 14.3-32 32c0 53-43 96-96 96l-160 0 0-32c0-12.9-7.8-24.6-19.8-29.6s-25.7-2.2-34.9 6.9l-64 64c-12.5 12.5-12.5 32.8 0 45.3l64 64c9.2 9.2 22.9 11.9 34.9 6.9s19.8-16.6 19.8-29.6l0-32 160 0c88.4 0 160-71.6 160-160z" />
-                </svg>
-            </button>
-        </div>
+            <div class="section-title section-delimiter">Таймер</div>
+            <div class="section-container">
+                <div class="param-container break500">
+                    <span class="section-sub-title">
+                        Отключить на <span id="systemTimeUnits" class="info-text"></span>
+                    </span>
 
-        <div class="checkbox-container">
-            <input type="checkbox" id="drivewayGates">
-            <label for="drivewayGates">Въездные ворота</label>
-        </div>
+                    <div class="param-container__setting" id="autoDisableTimerSetBlock">
+                        <div class="number-input">
+                            <button>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640">
+                                    <path d="M96 320C96 302.3 110.3 288 128 288L512 288C529.7 288 544 302.3 544 320C544 337.7 529.7 352 512 352L128 352C110.3 352 96 337.7 96 320z"/>
+                                </svg>
+                            </button>
+                            <input type="tel" id="autoDisableTimerInput">
+                            <button>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 640 640">
+                                    <path d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="param-container__delimiter"></div>
+                        <button id="autoDisableTimerSetButton" type="button" class="click-button">Установить</button>
+                    </div>
 
-        <div class="checkbox-container">
-            <input type="checkbox" id="yardGate">
-            <label for="yardGate">Калитка</label>
-        </div>
+                    <div class="param-container__setting param-container__setting--hidden" id="autoDisableTimerCancelBlock">
+                        <span class="info-text info-box" id="autoDisableTimerTimeRemained">7200 сек</span>
+                        <div class="param-container__delimiter"></div>
+                        <button id="autoDisableTimerCancelButton" type="button" class="click-button cancel-button">
+                            Отменить
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-        <div class="checkbox-container">
-            <input type="checkbox" id="frontDoor">
-            <label for="frontDoor">Входная дверь</label>
-        </div>
+            <div class="section-title section-delimiter">Настройки</div>
+            <div class="section-container">
+                <div class="param-container checkbox">
+                    <label for="drivewayGatesCheckbox" class="section-sub-title">
+                        Въездные ворота
+                    </label>
+                    <div class="param-container__setting">
+                        <input type="checkbox" id="drivewayGatesCheckbox">
+                    </div>
+                </div>
+                <div class="param-container checkbox">
+                    <label for="yardGateCheckbox" class="section-sub-title">
+                        Калитка
+                    </label>
+                    <div class="param-container__setting">
+                        <input type="checkbox" id="yardGateCheckbox">
+                    </div>
+                </div>
+                <div class="param-container checkbox">
+                    <label for="frontDoorCheckbox" class="section-sub-title">
+                        Входная дверь
+                    </label>
+                    <div class="param-container__setting">
+                        <input type="checkbox" id="frontDoorCheckbox">
+                    </div>
+                </div>
+                <div class="param-container break500">
+                    <span class="section-sub-title">
+                        Задержка отключения освещения<span id="systemTimeUnits" class="info-text"></span>
+                    </span>
+                    <div class="param-container__setting">
+                        <div class="number-input">
+                            <button>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+                                    <path d="M96 320C96 302.3 110.3 288 128 288L512 288C529.7 288 544 302.3 544 320C544 337.7 529.7 352 512 352L128 352C110.3 352 96 337.7 96 320z"/>
+                                </svg>
+                            </button>
+                            <input type="tel" id="offDelayInput">
+                            <button>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+                                    <path d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="param-container">
+                    <button id="savePreferenceButton" class="save-button">Сохранить</button>
+                </div>
+            </div>
 
-        <div class="number-input">
-            <span class="number-input-label">Задержка отключения, <span id="offDelayUnit"></span>:</span>
-            <div class="number-input-wrapper">
-                <button onclick="ui.adjustOffDelay(-1)">-</button>
-                <input oninput="ui.setOffDelay()" onblur="ui.validateOffDelay()" type="number" id="delayInput" min="1" max="20">
-                <button onclick="ui.adjustOffDelay(1)">+</button>
+            <div id="notificationPopup" class="notification-popup"></div>
+
+            <div id="loader" class="loader">
+                <div class="loader-icon"></div>
+                <div class="loader-text" id="loaderText">Загрузка...</div>
             </div>
         </div>
+    </main>
 
-        <button class="save-button" onclick="appModule.saveSettings()">Сохранить</button>
-    </div>
-
-    <div id="notificationPopup" class="notification-popup">Изменения сохранены!</div>
-
-    <div id="loader" class="loader">
-        <div class="loader-icon"></div>
-        <div class="loader-text" id="loaderText">Загрузка...</div>
-    </div>
-
-    <script>
-        const appModuleConfig = {
-            offDelayUseMinutes: true,
-            updateLightStatusInterval: 2000
-        }
-    </script>
-
-    <script src="static/ui.js"></script>
-    <script src="static/service.js"></script>
     <script src="static/app.js"></script>
-    <script src="static/index.js"></script>
-
-    <script>
-        appModule.run()
-    </script>
 </body>
 </html>

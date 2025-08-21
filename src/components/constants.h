@@ -7,18 +7,26 @@ constexpr const char* apiGetEspFreeHeapJsonTemplate = R"({
     "freeHeap": %d
 })";
 
-constexpr const char* apiGetLightStatusJsonTemplate = R"({
-    "enabled": %s,
-    "remained": %d
+constexpr const char* apiGetStateJsonTemplate = R"({
+    "light": {
+        "active": %s,
+        "remained": %d,
+        "zoneControlEnabled": %s
+    },
+    "autoDisableTimer": {
+        "active": %s,
+        "remained": %d
+    }
 })";
 
 constexpr const char* apiGetPreferenceJsonTemplate = R"({
     "triggerOnDrivewayGates": %s,
     "triggerOnYardGate": %s,
     "triggerOnFrontDoor": %s,
-    "offDelay": %d
+    "offDelay": %d,
+    "autoDisableTimerPeriod": %d
 })";
 
-constexpr const char* apiSavePreferenceJsonTemplate = R"({
-    "saved": %s
+constexpr const char* apiResultJsonTemplate = R"({
+    "ok": %s
 })";

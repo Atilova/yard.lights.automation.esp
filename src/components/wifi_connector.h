@@ -9,13 +9,13 @@
 #elif defined(ESP8266)
     #include <ESP8266WiFi.h>
 #else
-  #error "This code is for ESP32 or ESP8266 only."
+  #error "This code is for ESP32 and ESP8266 only."
 #endif
 
 #include "utils.h"
 #include "millis_timer.h"
 
-#define CONNECTION_TIMEOUT 6000
+#define CONNECTION_TIMEOUT 15000
 #define RESET_DELAY 1000
 
 typedef std::function<void(bool)> WifiCallback;
